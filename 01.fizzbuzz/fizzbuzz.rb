@@ -1,19 +1,13 @@
-count = 0
-result1 = 0
-result2 = 0
-
-while count < 20
-  count += 1
-  result1 = count.modulo(3)
-  result2 = count.modulo(5)
-  if result1 == 0 && result2 == 0
+1.upto(20) do |i|
+  multipul_3 = i % 3
+  multipul_5 = i % 5
+  if multipul_3 == 0 && multipul_5 == 0
     puts "FizzBuzz"
-  elsif result1 == 0
+  elsif multipul_3 == 0
     puts "Fizz"
-  elsif result2 == 0
+  elsif multipul_5 == 0
     puts "Buzz"
   else
-    puts count
+    puts i
   end
 end
-
