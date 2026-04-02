@@ -1,11 +1,9 @@
 1.upto(20) do |i|
-  multipul_3 = i % 3
-  multipul_5 = i % 5
-  if multipul_3 == 0 && multipul_5 == 0
+  if (i % 15).zero?
     puts "FizzBuzz"
-  elsif multipul_3 == 0
+  elsif (i % 3).zero?
     puts "Fizz"
-  elsif multipul_5 == 0
+  elsif (i % 5).zero?
     puts "Buzz"
   else
     puts i
