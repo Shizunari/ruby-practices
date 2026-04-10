@@ -37,26 +37,21 @@ input_month = input_options[:m]
 input_year = input_options[:y]
 
 # 年・月・日・曜日をセット
-Week_str = '日 月 火 水 木 金 土'
+WEEK_HEADER = '日 月 火 水 木 金 土'
 month_start = Date.new(input_year, input_month, 1)
 month_end = Date.new(input_year, input_month, -1)
 calender_head = "#{input_month}月 #{input_year}年"
 
 # 日付のスタート位置調整
-days_str = '   ' * month_start.wday
+days_word = '   ' * month_start.wday
 
 # 日付の出力位置調整
-(month_start.day..month_end.day).each do |date|
-  if (1..9).include?(date)
-    days_str += " #{date}".ljust(3)
-  else
-    days_str += "#{date}".ljust(3)
-  end
-  check_saturday = Date.parse("#{input_year}-#{input_month}-#{date}")
-  days_str = days_str + "\n" if check_saturday.saturday?
+(month_start..month_end).each do |date|
+  days_word += "#{date.day}".rjust(2) + " "
+  days_word += "\n" if date.saturday?
 end
 
 # 結果出力
 puts calender_head.center(20)
-puts Week_str
-puts days_str
+puts WEEK_HEADER
+puts days_word
