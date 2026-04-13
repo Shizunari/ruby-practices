@@ -47,7 +47,7 @@ days_word = '   ' * month_start.wday
 
 # 日付の出力位置調整
 (month_start..month_end).each do |date|
-  days_word += "#{date.day}".rjust(2) + " "
+  days_word += "#{date.day.to_s.rjust(2)} "
   days_word += "\n" if date.saturday?
 end
 
