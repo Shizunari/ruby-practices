@@ -14,22 +14,26 @@ end
 
 frames = shots.each_slice(2).to_a
 
-point_of_frames = []
-0.upto(9) do |frame|
-  # ストライクの処理
-  if frames[frame][0] == 10
-    # 次フレームもストライクか判定
-    if frames[frame + 1][0] == 10
-      point_of_frames << 20 + frames[frame + 2][0]
+def strike?(frame)
+  frame[0] == 10
+end
+
+def spare?(frame)
+  frame[0] != 10 && frame.sum == 10
+end
+
+score = 0.upto(9).sum do |n|
+  next_frame = frames[n + 1]
+  if strike?(frames[n])
+    if strike?(next_frame)
+      20 + frames[n + 2][0]
     else
-      point_of_frames << 10 + frames[frame + 1].sum
+      10 + next_frame.sum
     end
-  # スペアの処理
-  elsif frames[frame].sum == 10
-    point_of_frames << 10 + frames[frame + 1][0]
-  # 9ピン以下
+  elsif spare?(frames[n])
+    10 + next_frame[0]
   else
-    point_of_frames << frames[frame].sum
+    frames[n].sum
   end
 end
-puts "スコア：#{point_of_frames.sum}"
+puts "スコア：#{score}"
