@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 score = ARGV[0]
 scores = score.split(',')
@@ -19,7 +20,7 @@ def strike?(frame)
 end
 
 def spare?(frame)
-  frame[0] != 10 && frame.sum == 10
+  !strike?(frame) && frame.sum == 10
 end
 
 score = 0.upto(9).sum do |n|
