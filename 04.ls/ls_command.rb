@@ -30,8 +30,12 @@ end
 
 def output_names_only(names, length)
   names.each do |n|
-    n.each do |name|
-      print "#{name.to_s.ljust(length)}\t"
+    n.each_with_index do |name, i|
+      if i == n.length - 1
+        print name
+      else
+        print "#{name.to_s.ljust(length)}\t"
+      end
     end
     print "\n"
   end
