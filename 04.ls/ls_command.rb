@@ -1,58 +1,36 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-def get_files(all: false)
-  if all
-    Dir.glob('*', File::FNM_DOTMATCH)
-  else
-    Dir.glob('*')
-  end
+def get_word_length(words)
+  words.map(&:length).max
 end
 
-def check_length(names)
-  word_length = 0
-  names.each do |name|
-    word_length = name.size if name.size > word_length
-  end
-  word_length
+def alignment(words, colmun)
+  array_rows = (words.length.to_f / colmun).ceil
+  sort_array = words.sort_by(&:downcase)
+  align_sort_array = sort_array.each_slice(array_rows).to_a
+  align_sort_array[0].zip(*align_sort_array[1..])
 end
 
-def narabikae(names, colmun, rev: false)
-  array_rows = (names.size.to_f / colmun).ceil
-  sort_array = if rev
-                 names.sort_by(&:downcase).reverse
-               else
-                 names.sort_by(&:downcase)
-               end
-  yoko_narabi = sort_array.each_slice(array_rows).to_a
-  yoko_narabi[0].zip(*yoko_narabi[1..])
-end
-
-def output_names_only(names, length)
-  names.each do |n|
-    n.each_with_index do |name, i|
-      if i == n.length - 1
-        print name
+def output_word_only(words, max_length)
+  words.each do |row_words|
+    row_words.each_with_index do |word, i|
+      if i == row_words.length - 1
+        print word
       else
-        print "#{name.to_s.ljust(length)}\t"
+        print word.to_s.ljust(max_length + 4)
       end
     end
-    print "\n"
+    puts
   end
 end
 
-# ファイル情報を取得
-files_info = get_files
+# 出力列の最大値を設定する
+SET_OUTPUT_COLMUN = 3
+
+files_info = Dir.glob('*')
 exit if files_info[0].nil?
 
-# 文字列の長さチェック
-max_word_len = check_length(files_info)
-
-# 出力列を指定
-output_colmun = 3
-
-# 出力列に則って配列の並び替え
-tate_narabi = narabikae(files_info, output_colmun)
-
-# 長さ指定で配列を出力
-output_names_only(tate_narabi, max_word_len)
+max_word_len = get_word_length(files_info)
+align_files_info = alignment(files_info, SET_OUTPUT_COLMUN)
+output_word_only(align_files_info, max_word_len)
