@@ -1,8 +1,18 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'optparse'
+
 # 出力列の最大値を指定する
 COLMUN_UPPER_LIMIT = 3
+
+def search_directory(path, all:)
+  if all
+    Dir.entries(path)
+  else
+    Dir.glob('*')
+  end
+end
 
 def array_to_matrix(filenames, colmun)
   rows_count = filenames.length.ceildiv(colmun)
@@ -23,7 +33,15 @@ def display_matrix(filenames, max_length)
   end
 end
 
-files_info = Dir.glob('*')
+begin
+  options = ARGV.getopts('a')
+rescue OptionParser::ParseError => e
+  warn "Error: #{e.class}"
+  abort '-a以外の引数は利用できません。'
+end
+
+directory_path = Dir.pwd
+files_info = search_directory(directory_path, all: options['a'])
 exit if files_info[0].nil?
 
 max_filename_length = files_info.map(&:length).max
