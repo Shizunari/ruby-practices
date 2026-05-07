@@ -6,8 +6,12 @@ require 'optparse'
 # 出力列の最大値を指定する
 COLMUN_UPPER_LIMIT = 3
 
-def search_directory(path, all:)
-  if all
+def search_directory(path, all:, rev:)
+  if all && rev
+    Dir.entries(path).sort.reverse
+  elsif !all && rev
+    Dir.glob('*').reverse
+  elsif all && !rev
     Dir.entries(path).sort
   else
     Dir.glob('*')
@@ -26,15 +30,15 @@ def display_matrix(filenames, max_length)
       if i == row_filenames.length - 1
         print filename
       else
-        double_byte_adjustment = diff_single_doublebyte(filename)
-        print filename.to_s.ljust(max_length + 4 - double_byte_adjustment)
+        display_position_adjustment = diff_full_half_width(filename)
+        print filename.to_s.ljust(max_length + 4 - display_position_adjustment)
       end
     end
     puts
   end
 end
 
-def diff_single_doublebyte(str)
+def diff_full_half_width(str)
   return 0 if str.nil?
 
   display_length = str.each_char.map { |c| c.bytesize > 1 ? 2 : 1 }.sum
@@ -42,14 +46,14 @@ def diff_single_doublebyte(str)
 end
 
 begin
-  options = ARGV.getopts('a')
+  options = ARGV.getopts('ar')
 rescue OptionParser::ParseError => e
   warn "Error: #{e.class}"
-  abort '-a以外の引数は利用できません。'
+  abort '-aと-r以外の引数は利用できません。'
 end
 
 directory_path = Dir.pwd
-files_info = search_directory(directory_path, all: options['a'])
+files_info = search_directory(directory_path, all: options['a'], rev: options['r'])
 exit if files_info[0].nil?
 
 max_filename_length = files_info.map(&:length).max
