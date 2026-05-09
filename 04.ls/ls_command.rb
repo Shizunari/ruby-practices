@@ -6,16 +6,18 @@ require 'optparse'
 # 出力列の最大値を指定する
 COLMUN_UPPER_LIMIT = 3
 
-def search_directory(path, all:, rev:)
-  if all && rev
-    Dir.entries(path).sort.reverse
-  elsif !all && rev
-    Dir.glob('*').reverse
-  elsif all && !rev
+def search_directory(path, all:)
+  if all
     Dir.entries(path).sort
   else
     Dir.glob('*')
   end
+end
+
+def reverse_array(filenames, rev:)
+  return filenames unless rev
+
+  filenames.reverse
 end
 
 def array_to_matrix(filenames, colmun)
@@ -53,9 +55,10 @@ rescue OptionParser::ParseError => e
 end
 
 directory_path = Dir.pwd
-files_info = search_directory(directory_path, all: options['a'], rev: options['r'])
+files_info = search_directory(directory_path, all: options['a'])
 exit if files_info[0].nil?
 
 max_filename_length = files_info.map(&:length).max
-matrixed_filenames = array_to_matrix(files_info, COLMUN_UPPER_LIMIT)
+reversed_filenames = reverse_array(files_info, rev: options['r'])
+matrixed_filenames = array_to_matrix(reversed_filenames, COLMUN_UPPER_LIMIT)
 display_matrix(matrixed_filenames, max_filename_length)
