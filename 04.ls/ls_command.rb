@@ -14,8 +14,8 @@ def search_directory(path, all:)
   end
 end
 
-def reverse_array(filenames, rev:)
-  return filenames unless rev
+def reverse_array(filenames, reverse:)
+  return filenames unless reverse
 
   filenames.reverse
 end
@@ -59,6 +59,6 @@ files_info = search_directory(directory_path, all: options['a'])
 exit if files_info[0].nil?
 
 max_filename_length = files_info.map(&:length).max
-reversed_filenames = reverse_array(files_info, rev: options['r'])
+reversed_filenames = reverse_array(files_info, reverse: options['r'])
 matrixed_filenames = array_to_matrix(reversed_filenames, COLMUN_UPPER_LIMIT)
 display_matrix(matrixed_filenames, max_filename_length)
