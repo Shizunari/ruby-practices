@@ -7,6 +7,17 @@ require 'etc'
 # マトリックス時の出力列の最大値を指定
 COLMUN_UPPER_LIMIT = 3
 
+PERMISSION_SYMBOLS = {
+  '0' => '---',
+  '1' => '--x',
+  '2' => '-w-',
+  '3' => '-wx',
+  '4' => 'r--',
+  '5' => 'r-x',
+  '6' => 'rw-',
+  '7' => 'rwx'
+}.freeze
+
 def search_directory(path, all:)
   if all
     Dir.entries(path).sort
@@ -67,61 +78,54 @@ end
 def number_to_rwx(permission_numbers)
   return_symbol = ''
   permission_numbers.chars.each do |n|
-    return_symbol += {
-      '0' => '---',
-      '1' => '--x',
-      '2' => '-w-',
-      '3' => '-wx',
-      '4' => 'r--',
-      '5' => 'r-x',
-      '6' => 'rw-',
-      '7' => 'rwx'
-    }[n]
+    return_symbol += PERMISSION_SYMBOLS[n]
   end
   return_symbol
 end
 
 def make_line_infomation(path, filename)
   file_type = File.ftype("#{path}/#{filename}").slice(0, 1)
-  temp_array = if file_type == 'l'
-                 link_type_information(path, filename, file_type)
-               else
-                 other_type_information(path, filename, file_type)
-               end
-  keys = %i[type permission hardlink owner group data_size date_time name block_size]
-  keys.zip(temp_array).to_h
+  if file_type == 'l'
+    link_type_information(path, filename, file_type)
+  else
+    other_type_information(path, filename, file_type)
+  end
 end
 
 def link_type_information(path, filename, file_type)
-  temp_array = []
-  temp_array << file_type
+  link_file_detail = []
+  link_file_detail << { type: file_type }
   select_fileclass = File.lstat("#{path}/#{filename}")
-  temp_array << number_to_rwx(select_fileclass.mode.to_s(8).slice(-3, 3))
-  temp_array << select_fileclass.nlink
-  temp_array << Etc.getpwuid(select_fileclass.uid).name
-  temp_array << Etc.getgrgid(select_fileclass.gid).name
-  temp_array << select_fileclass.size
-  temp_array << File.lstat("#{path}/#{filename}").mtime.strftime('%b %_d %R')
-  temp_array << "#{File.basename("#{path}/#{filename}")} -> #{File.readlink("#{path}/#{filename}")}"
-  temp_array << select_fileclass.blocks
+  link_file_detail.concat(type_infomation_common_part(select_fileclass))
+  link_file_detail << { date_time: select_fileclass.mtime.strftime('%b %_d %R') }
+  link_file_detail << { name: "#{File.basename("#{path}/#{filename}")} -> #{File.readlink("#{path}/#{filename}")}" }
+  array_to_hash = {}
+  array_to_hash.merge(*link_file_detail)
 end
 
 def other_type_information(path, filename, file_type)
-  temp_array = []
-  temp_array << if file_type == 'f'
-                  '-'
-                else
-                  file_type
-                end
+  file_detail = []
+  file_detail << if file_type == 'f'
+                   { type: '-' }
+                 else
+                   { type: file_type }
+                 end
   select_fileclass = File.stat("#{path}/#{filename}")
-  temp_array << number_to_rwx(select_fileclass.mode.to_s(8).slice(-3, 3))
-  temp_array << select_fileclass.nlink
-  temp_array << Etc.getpwuid(select_fileclass.uid).name
-  temp_array << Etc.getgrgid(select_fileclass.gid).name
-  temp_array << select_fileclass.size
-  temp_array << File.mtime("#{path}/#{filename}").strftime('%b %_d %R')
-  temp_array << File.basename("#{path}/#{filename}")
-  temp_array << select_fileclass.blocks
+  file_detail.concat(type_infomation_common_part(select_fileclass))
+  file_detail << { date_time: File.mtime("#{path}/#{filename}").strftime('%b %_d %R') }
+  file_detail << { name: File.basename("#{path}/#{filename}") }
+  array_to_hash = {}
+  array_to_hash.merge(*file_detail)
+end
+
+def type_infomation_common_part(file_class)
+  common_detail = []
+  common_detail << { permission: number_to_rwx(file_class.mode.to_s(8).slice(-3, 3)) }
+  common_detail << { hardlink: file_class.nlink }
+  common_detail << { owner: Etc.getpwuid(file_class.uid).name }
+  common_detail << { group: Etc.getgrgid(file_class.gid).name }
+  common_detail << { data_size: file_class.size }
+  common_detail << { block_size: file_class.blocks }
 end
 
 begin
