@@ -83,49 +83,35 @@ def number_to_rwx(permission_numbers)
   return_symbol
 end
 
-def make_line_infomation(path, filename)
-  file_type = File.ftype("#{path}/#{filename}").slice(0, 1)
-  if file_type == 'l'
-    link_type_information(path, filename, file_type)
-  else
-    other_type_information(path, filename, file_type)
-  end
-end
-
-def link_type_information(path, filename, file_type)
-  link_file_detail = []
-  link_file_detail << { type: file_type }
-  select_fileclass = File.lstat("#{path}/#{filename}")
-  link_file_detail.concat(type_infomation_common_part(select_fileclass))
-  link_file_detail << { date_time: select_fileclass.mtime.strftime('%b %_d %R') }
-  link_file_detail << { name: "#{File.basename("#{path}/#{filename}")} -> #{File.readlink("#{path}/#{filename}")}" }
-  array_to_hash = {}
-  array_to_hash.merge(*link_file_detail)
-end
-
-def other_type_information(path, filename, file_type)
-  file_detail = []
-  file_detail << if file_type == 'f'
-                   { type: '-' }
+def file_detailed_information(path, filename)
+  file_path = File.join(path, filename)
+  file_stat = File.lstat(file_path)
+  file_type = File.ftype(file_path).slice(0, 1)
+  type_pattern = if file_type == 'f'
+                   '-'
                  else
-                   { type: file_type }
+                   file_type
                  end
-  select_fileclass = File.stat("#{path}/#{filename}")
-  file_detail.concat(type_infomation_common_part(select_fileclass))
-  file_detail << { date_time: File.mtime("#{path}/#{filename}").strftime('%b %_d %R') }
-  file_detail << { name: File.basename("#{path}/#{filename}") }
-  array_to_hash = {}
-  array_to_hash.merge(*file_detail)
+  name_pattern = if file_type == 'l'
+                   "#{File.basename(file_path)} -> #{File.readlink(file_path)}"
+                 else
+                   File.basename(file_path)
+                 end
+  build_display_file_detail(file_path, file_stat, type_pattern, name_pattern)
 end
 
-def type_infomation_common_part(file_class)
-  common_detail = []
-  common_detail << { permission: number_to_rwx(file_class.mode.to_s(8).slice(-3, 3)) }
-  common_detail << { hardlink: file_class.nlink }
-  common_detail << { owner: Etc.getpwuid(file_class.uid).name }
-  common_detail << { group: Etc.getgrgid(file_class.gid).name }
-  common_detail << { data_size: file_class.size }
-  common_detail << { block_size: file_class.blocks }
+def build_display_file_detail(file_path, file_stat, type_pattern, name_pattern)
+  {
+    type: type_pattern,
+    permission: number_to_rwx(file_stat.mode.to_s(8).slice(-3, 3)),
+    hardlink: file_stat.nlink,
+    owner: Etc.getpwuid(file_stat.uid).name,
+    group: Etc.getgrgid(file_stat.gid).name,
+    data_size: file_stat.size,
+    date_time: File.mtime(file_path).strftime('%b %_d %R'),
+    name: name_pattern,
+    block_size: file_stat.blocks
+  }
 end
 
 begin
@@ -150,11 +136,7 @@ if !options['l']
   display_matrix(matrixed_filenames, max_filename_length)
 
 else
-  display_array = []
-  (reversed_filenames || files_info).each do |filename|
-    display_array << make_line_infomation(directory_path, filename)
-  end
-
+  display_array = (reversed_filenames || files_info).map { |item| file_detailed_information(directory_path, item) }
   puts "total #{display_array.sum { |h| h[:block_size] }}"
   display_line(display_array)
 end
