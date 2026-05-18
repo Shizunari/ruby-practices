@@ -18,12 +18,9 @@ PERMISSION_SYMBOLS = {
   '7' => 'rwx'
 }.freeze
 
-def search_directory(path, all:)
-  if all
-    Dir.entries(path).sort
-  else
-    Dir.glob('*')
-  end
+def search_directory(path, options)
+  file_names = options['a'] ? Dir.entries(path).sort : Dir.glob('*')
+  reverse_order?(options) ? file_names.reverse : file_names
 end
 
 def reverse_order?(options)
@@ -63,6 +60,7 @@ def display_line(informations)
   group_length = informations.map { |h| h[:group] }.max.to_s.length
   datasize_length = informations.map { |h| h[:data_size] }.max.to_s.length
 
+  puts "total #{informations.sum { |h| h[:block_size] }}"
   informations.each do |information|
     print information[:type]
     print information[:permission]
@@ -87,20 +85,8 @@ def file_detailed_information(path, filename)
   file_path = File.join(path, filename)
   file_stat = File.lstat(file_path)
   file_type = File.ftype(file_path).slice(0, 1)
-  type_pattern = if file_type == 'f'
-                   '-'
-                 else
-                   file_type
-                 end
-  name_pattern = if file_type == 'l'
-                   "#{File.basename(file_path)} -> #{File.readlink(file_path)}"
-                 else
-                   File.basename(file_path)
-                 end
-  build_display_file_detail(file_path, file_stat, type_pattern, name_pattern)
-end
-
-def build_display_file_detail(file_path, file_stat, type_pattern, name_pattern)
+  type_pattern = file_type == 'f' ? '-' : file_type
+  name_pattern = file_type == 'l' ? "#{File.basename(file_path)} -> #{File.readlink(file_path)}" : File.basename(file_path)
   {
     type: type_pattern,
     permission: number_to_rwx(file_stat.mode.to_s(8).slice(-3, 3)),
@@ -122,21 +108,17 @@ rescue OptionParser::ParseError => e
 end
 
 directory_path = Dir.pwd
-files_info = search_directory(directory_path, all: options['a'])
+files_info = search_directory(directory_path, options)
 if files_info[0].nil?
   puts 'total 0' if options['l']
   exit
 end
 
-reversed_filenames = files_info.reverse if reverse_order?(options)
-
 if !options['l']
   max_filename_length = files_info.map(&:length).max
-  matrixed_filenames = array_to_matrix(reversed_filenames || files_info, COLMUN_UPPER_LIMIT)
+  matrixed_filenames = array_to_matrix(files_info, COLMUN_UPPER_LIMIT)
   display_matrix(matrixed_filenames, max_filename_length)
-
 else
-  display_array = (reversed_filenames || files_info).map { |item| file_detailed_information(directory_path, item) }
-  puts "total #{display_array.sum { |h| h[:block_size] }}"
+  display_array = files_info.map { |item| file_detailed_information(directory_path, item) }
   display_line(display_array)
 end
